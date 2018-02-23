@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<meta charset="UTF-8">
+<html>
+
+<head>
+<title>Programming Assignment 2</title>
+<style>
+    body {
+        background-color: #EEEEEE;
+    }
+    label {
+        white-space: pre;
+    }
+</style>
+
+<!-- vertex shader -->
+<script type="x-shader/x-vertex" id="vshader-source">
+    attribute vec3 a_coords;
+    attribute vec3 a_normal;
+
+    uniform bool ambient;
+    uniform bool diffuse;
+    uniform bool specular;
+
+    uniform mat4 modelview;
+    uniform mat4 projection;
+
+    uniform mat3 normalMatrix;
+    uniform vec4 lightPosition;
+    uniform vec4 diffuseColor;
+    uniform vec3 specularColor;
+    uniform float specularExponent;
+    varying vec4 v_color;
+
+    
+
+    void main() {
+        vec4 coords = vec4(a_coords,1.0);
+        vec4 eyeCoords = modelview* coords;
+        gl_Position = projection * eyeCoords;
+
+        vec3 N, L, R, V;  // vectors for lighting equation
+        N = normalize( normalMatrix*a_normal );
+        if ( lightPosition.w == 0.0 ) {
+            L = normalize( lightPosition.xyz );
+        }
+        else {
+            L = normalize( lightPosition.xyz/lightPosition.w - eyeCoords.xyz );
+        }
+        R = -reflect(L,N);
+        V = normalize( -eyeCoords.xyz);     // (Assumes a perspective projection.)
+
+        v_color = vec4(0,0,0,1);
+
+        if (ambient){
+            vec3 color = 0.1 * diffuseColor.rgb;
+            v_color = vec4(color, diffuseColor.a);
+        }
+
+        if (diffuse){
+            if ( dot(L,N) <= 0.0 ) 
+            {
+                v_color = vec4(0,0,0,1);
+            }
+            else {
+                vec3 color = 0.8*dot(L,N) * diffuseColor.rgb;
+                v_color = vec4(color, diffuseColor.a);
+            }
+        }
+
+        if (specular){
+            vec3 color = 0.8*dot(L,N) * diffuseColor.rgb; 
+            if (dot(R,V) > 0.0) {
+                color += 0.4*pow(dot(R,V),specularExponent) * specularColor; 
+            }
+            v_color = vec4(color, diffuseColor.a);
+        }
+    }
+/*
+//         if ( dot(L,N) <= 0.0 ) {
+//                 v_color = vec4(0,0,0,1);
+//         }
+//         else {
+//             vec3 color = 0.8*dot(L,N) * diffuseColor.rgb;  // 0.8 is diffuse intensity of light
+//             if (dot(R,V) > 0.0) {
+//                 color += 0.4*pow(dot(R,V),specularExponent) * specularColor; // 0.4 is specular intensity of light
+//             }
+//             v_color = vec4(color, diffuseColor.a);
+//         }
+// }
+*/
+
+
+    // TODO: Your code goes here.
+    // Vertex Shader computes the coordinates for all the vertices which are being drawn.
+    // Fragment Shader computes the color for those vertices. 
+    // You can also pass variables from the vertex shader to the fragment shader. 
+    // Look into the pa2.js and see what attributes and uniforms are being transferred to both the
+    // shaders. Write the code in both the shaders appropriately. 
+
+</script>
+
+<!-- fragment shader -->
+<script type="x-shader/x-fragment" id="fshader-source">
+    #ifdef GL_FRAGMENT_PRECISION_HIGH
+       precision highp float;
+    #else
+       precision mediump float;
+    #endif
+
+    // TODO: Your code goes here.
+    // Fragment Shader computes the color for those vertices. 
+    // You can also pass variables from the vertex shader to the fragment shader. 
+    // Look into the pa2.js and see what attributes and uniforms are being transferred to both the
+    // shaders. Write the code in both the shaders appropriately. 
+    // Use the diffuse_color to compute both ambient and diffuse lighting.
+    // Use the specular_color to compute the specular lighting.
+    // Use K_a = 0.1, K_d = 0.4, K_s =0.4. 
+
+    // precision mediump float;
+
+    varying vec4 v_color;    
+
+    void main() {        
+        gl_FragColor = v_color;
+    }
+</script>
+
+<script src="gl-matrix-min.js"></script>
+<script src="trackball-rotator.js"></script>
+<script src="model.js"></script>
+<script src="pa2.js"></script>
+</head>
+
+
+<body onload="init()">
+Name: <br/>
+Student ID: <br/>
+
+ <p style="width:600px; text-align: left;">
+    <label><b>Object:</b> <select id="object">
+        <option value="0">Torus</option>
+        <option value="1">Cylinder</option>
+        <option value="2">Sphere</option>
+    </select></label><br>
+
+    <label><b>Lighting:  </b></label>
+    <label><b>Ambient</b><input type="checkbox" id="ambient"></label>
+    <label><b>Diffuse</b><input type="checkbox" id="diffuse"></label>
+    <label><b>Specular</b><input type="checkbox" id="specular"></label><br/>
+
+    <label><b>Light Position:</b> <select id="lightpos">
+        <option value="0">[0,0,0,1] (Viewpoint light)</option>
+        <option value="1">[0,0,1,0] (Directional, into screen)</option>
+        <option value="2">[0,1,0,0] (Directional, from above)</option>
+        <option value="3">[0,0,-10,1] (On z-axis, close to object)</option>
+        <option value="4">[2,3,5,0] (Directional from upper right)</option>
+        <option value="5">[0,-1,0,0] (Directional from bottom)</option>
+        <option value="6">[-1,0,0,0] (Directional from left)</option>
+<!--    TODO: Your code goes here.
+        Add two more lights at different directions. One from the bottom and One
+        from the left of the scene. Appropriately change the pa2.js file so that when user
+        selects these new light positions, the scene gets updated. 
+        */ -->
+    </select></label><br>
+
+    <label><b>Specular Exponent:</b> <select id="exponent">
+        <option>0</option>
+        <option>1</option>
+        <option>2</option>
+        <option>5</option>
+        <option>10</option>
+        <option>20</option>
+        <option>50</option>
+        <option>100</option>
+    </select></label>
+</p>
+
+<div id="canvas-holder">
+   <canvas width=700 height=700 id="myGLCanvas" style="background-color:red"></canvas>
+</div>
+
+<p>
+    Changing the specular exponent value will modify the &quot;shininess&quot; of the object.<br />
+    As the exponent value n increases, the function cos(theta)^n changes faster and sharper since the cos(theta) is non-negative and never pass through 1.<br />
+    The higher power of a number between 0 and 1 becomes smaller than itself.<br />
+
+</p>
+
+</body>
+
+
+</html>
+
